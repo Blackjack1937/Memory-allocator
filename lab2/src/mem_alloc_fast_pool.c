@@ -7,7 +7,12 @@
 
 void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t max_request_size)
 {
-    /* TO BE IMPLEMENTED */
+    size_t sizet = 0;  // Size of the fast pool
+    int nb_blocks = 0; // Number of blocks for each pool
+
+    void *address = my_mmap(sizet * nb_blocks); // Creating the memory zone and saving the address
+    return address;
+
     printf("%s:%d: Please, implement me!\n", __FUNCTION__, __LINE__);
 }
 
@@ -20,8 +25,10 @@ void *mem_alloc_fast_pool(mem_pool_t *pool, size_t size)
 
 void mem_free_fast_pool(mem_pool_t *pool, void *b)
 {
-    /* TO BE IMPLEMENTED */
-    printf("%s:%d: Please, implement me!\n", __FUNCTION__, __LINE__);
+
+    size_t res = mem_get_allocated_block_size_fast_pool(pool, addr)
+        my_munmap(addr, res)
+            printf("%s:%d: Please, implement me!\n", __FUNCTION__, __LINE__);
 }
 
 size_t mem_get_allocated_block_size_fast_pool(mem_pool_t *pool, void *addr)
