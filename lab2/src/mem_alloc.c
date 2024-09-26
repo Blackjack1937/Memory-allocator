@@ -27,12 +27,6 @@ void *(*o_calloc)(size_t, size_t) = NULL;
 /* Array of memory pool descriptors (indexed by pool id) */
 static mem_pool_t mem_pools[NB_MEM_POOLS];
 
-/* Defining pool sizes for each type*/
-#define MEM_POOL_0_SIZE (64 * 1024)       // 64 KB for Pool 0
-#define MEM_POOL_1_SIZE (256 * 1024)      // 256 KB for Pool 1
-#define MEM_POOL_2_SIZE (1024 * 1024)     // 1 MB for Pool 2
-#define MEM_POOL_3_SIZE (4 * 1024 * 1024) // Example: 4 MB for Pool 3 (standard pool)
-
 /* Note: the other fields will be setup by the init procedure */
 static mem_pool_t fast_pool_1_64 = {
     .pool_id = 0,
