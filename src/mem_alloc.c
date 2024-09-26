@@ -76,7 +76,7 @@ void run_at_exit(void)
     /* You are encouraged to insert more useful code ... */
 }
 
-/*
+/* 
  * Returns the id of the pool in charge of a given block size.
  * Note:
  * We assume that the contents of the pools are consistent
@@ -158,7 +158,7 @@ void memory_init(void)
     o_calloc = dlsym(RTLD_NEXT, "calloc");
 }
 
-/*
+/* 
  * Entry point for allocation requests.
  * Forwards the request to the appopriate pool.
  */
@@ -192,7 +192,7 @@ void *memory_alloc(size_t size)
     return alloc_addr;
 }
 
-/*
+/* 
  * Entry point for deallocation requests.
  * Forwards the request to the appopriate pool.
  */
@@ -242,8 +242,34 @@ size_t memory_get_allocated_block_size(void *addr)
 
 void print_mem_state(void)
 {
-    /* TO BE IMPLEMENTED */
-    printf("Please, implement me!\n");
+    printf("memory state of Pool 0 (<=64 bytes)\n ");
+    char mem0[MEM_POOL_0_SIZE];
+    print_fast_pool(mem0);
+    printf("memory state of Pool 1 (<=256 bytes)\n");
+    char mem1[MEM_POOL_1_SIZE];
+    print_fast_pool(mem1);
+    printf("memory state of Pool 2 (<=1024 bytes)\n");
+    char mem2[MEM_POOL_2_SIZE];
+    print_fast_pool(mem2);
+    printf("memory state of Pool 3 (>1024bytes\n");
+
+}
+
+void print_fast_pool(char mem[]){
+    printf("[");
+    char *pointer_to_the_next_mem_block;
+    for(int i=0; i<sizeof(mem); i++ ){
+            mem[i]='.';
+    }
+    while(pointer_to_the_next_mem_block!=NULL){
+        long int i = pointer_to_the_next_mem_block-mem ;
+        mem[i]='#';
+        pointer_to_the_next_mem_block=*pointer_to_the_next_mem_block;
+    }
+    for(int i =0; i<sizeof(mem);i++){
+        printf("%c",mem[i]);
+    }
+    printf("]\n");
 }
 
 void print_free_info(void *addr)
@@ -253,7 +279,7 @@ void print_free_info(void *addr)
         int i;
         i = find_pool_from_block_address(addr);
 
-        fprintf(stderr, "FREE  at : %lu -- pool %d\n", ULONG((char *)addr - (char *)mem_pools[i].start_addr), mem_pools[i].pool_id);
+        fprintf(stderr, "FREE  at : %lu -- pool %d\n", ULONG((char*)addr - (char*)mem_pools[i].start_addr), mem_pools[i].pool_id);
     }
     else
     {
@@ -269,7 +295,7 @@ void print_alloc_info(void *addr, int size)
         i = find_pool_from_block_address(addr);
 
         fprintf(stderr, "ALLOC at : %lu (%d byte(s)) -- pool %d\n",
-                ULONG((char *)addr - (char *)mem_pools[i].start_addr), size, mem_pools[i].pool_id);
+                ULONG((char*)addr - (char*)mem_pools[i].start_addr), size, mem_pools[i].pool_id);
     }
     else
     {
