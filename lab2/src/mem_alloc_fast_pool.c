@@ -44,7 +44,7 @@ void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t 
         return;
     }
 
-    // Initialize the pool structure
+    // Initialize the pool
     p->start_addr = address;                        // Start of the memory region
     p->end_addr = (void *)((char *)address + size); // End of the memory region
     p->pool_size = size;
@@ -84,10 +84,8 @@ void *mem_alloc_fast_pool(mem_pool_t *pool, size_t size)
         return NULL; // No free blocks available in this pool
     }
 
-    // Allocate the first block from the free list
+    // Allocate the first block from the free list and update it
     void *allocated_block = pool->first_free;
-
-    // Update the free list to point to the next free block
     pool->first_free = *(void **)allocated_block;
 
     return allocated_block;
