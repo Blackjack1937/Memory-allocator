@@ -70,7 +70,7 @@ void run_at_exit(void)
     /* You are encouraged to insert more useful code ... */
 }
 
-/* 
+/*
  * Returns the id of the pool in charge of a given block size.
  * Note:
  * We assume that the contents of the pools are consistent
@@ -152,7 +152,7 @@ void memory_init(void)
     o_calloc = dlsym(RTLD_NEXT, "calloc");
 }
 
-/* 
+/*
  * Entry point for allocation requests.
  * Forwards the request to the appopriate pool.
  */
@@ -186,7 +186,7 @@ void *memory_alloc(size_t size)
     return alloc_addr;
 }
 
-/* 
+/*
  * Entry point for deallocation requests.
  * Forwards the request to the appopriate pool.
  */
@@ -247,7 +247,7 @@ void print_free_info(void *addr)
         int i;
         i = find_pool_from_block_address(addr);
 
-        fprintf(stderr, "FREE  at : %lu -- pool %d\n", ULONG((char*)addr - (char*)mem_pools[i].start_addr), mem_pools[i].pool_id);
+        fprintf(stderr, "FREE  at : %lu -- pool %d\n", ULONG((char *)addr - (char *)mem_pools[i].start_addr), mem_pools[i].pool_id);
     }
     else
     {
@@ -263,7 +263,7 @@ void print_alloc_info(void *addr, int size)
         i = find_pool_from_block_address(addr);
 
         fprintf(stderr, "ALLOC at : %lu (%d byte(s)) -- pool %d\n",
-                ULONG((char*)addr - (char*)mem_pools[i].start_addr), size, mem_pools[i].pool_id);
+                ULONG((char *)addr - (char *)mem_pools[i].start_addr), size, mem_pools[i].pool_id);
     }
     else
     {

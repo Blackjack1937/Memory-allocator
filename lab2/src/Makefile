@@ -59,7 +59,7 @@ endif
 
 
 # use -DDEBUG=1 to enable debug messages, -DDEBUG=0 to disable them
-CONFIG_FLAGS += -DDEBUG=0
+CONFIG_FLAGS += -DDEBUG=1
 
 CONFIG_FLAGS += -DDISABLE_CALLOC_INTERPOSITION
 

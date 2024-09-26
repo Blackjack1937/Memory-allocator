@@ -30,4 +30,7 @@
 
 ## Test scenarios :
 
+    gdb ./bin./mem_shell
+    run <tests/alloc1.in
+
 ## Conclusion and feedback :
