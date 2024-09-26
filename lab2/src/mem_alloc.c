@@ -27,6 +27,12 @@ void *(*o_calloc)(size_t, size_t) = NULL;
 /* Array of memory pool descriptors (indexed by pool id) */
 static mem_pool_t mem_pools[NB_MEM_POOLS];
 
+/* Defining pool sizes for each type*/
+#define MEM_POOL_0_SIZE (64 * 1024)       // 64 KB for Pool 0
+#define MEM_POOL_1_SIZE (256 * 1024)      // 256 KB for Pool 1
+#define MEM_POOL_2_SIZE (1024 * 1024)     // 1 MB for Pool 2
+#define MEM_POOL_3_SIZE (4 * 1024 * 1024) // Example: 4 MB for Pool 3 (standard pool)
+
 /* Note: the other fields will be setup by the init procedure */
 static mem_pool_t fast_pool_1_64 = {
     .pool_id = 0,
@@ -70,7 +76,7 @@ void run_at_exit(void)
     /* You are encouraged to insert more useful code ... */
 }
 
-/* 
+/*
  * Returns the id of the pool in charge of a given block size.
  * Note:
  * We assume that the contents of the pools are consistent
@@ -152,7 +158,7 @@ void memory_init(void)
     o_calloc = dlsym(RTLD_NEXT, "calloc");
 }
 
-/* 
+/*
  * Entry point for allocation requests.
  * Forwards the request to the appopriate pool.
  */
@@ -186,7 +192,7 @@ void *memory_alloc(size_t size)
     return alloc_addr;
 }
 
-/* 
+/*
  * Entry point for deallocation requests.
  * Forwards the request to the appopriate pool.
  */
@@ -247,7 +253,7 @@ void print_free_info(void *addr)
         int i;
         i = find_pool_from_block_address(addr);
 
-        fprintf(stderr, "FREE  at : %lu -- pool %d\n", ULONG((char*)addr - (char*)mem_pools[i].start_addr), mem_pools[i].pool_id);
+        fprintf(stderr, "FREE  at : %lu -- pool %d\n", ULONG((char *)addr - (char *)mem_pools[i].start_addr), mem_pools[i].pool_id);
     }
     else
     {
@@ -263,7 +269,7 @@ void print_alloc_info(void *addr, int size)
         i = find_pool_from_block_address(addr);
 
         fprintf(stderr, "ALLOC at : %lu (%d byte(s)) -- pool %d\n",
-                ULONG((char*)addr - (char*)mem_pools[i].start_addr), size, mem_pools[i].pool_id);
+                ULONG((char *)addr - (char *)mem_pools[i].start_addr), size, mem_pools[i].pool_id);
     }
     else
     {
