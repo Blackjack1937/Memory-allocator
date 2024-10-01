@@ -26,6 +26,7 @@ void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, siz
         perror("Memory allocation failed for the standard pool");
         return;
     }
+
     // Initialize the pool
     p->start_addr = address;
     p->end_addr = (void *)((char *)address + size);
@@ -43,7 +44,8 @@ void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, siz
 
     first_block->next = NULL; // No next free block yet
     first_block->prev = NULL; // No previous free block yet
-    // Footer match the header
+
+    // Footer matches the header
     mem_std_block_header_footer_t *first_footer = (mem_std_block_header_footer_t *)((char *)address + size - sizeof(mem_std_block_header_footer_t));
     *first_footer = first_block->header;
 
@@ -54,59 +56,86 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size)
 {
     mem_std_free_block_t *current = (mem_std_free_block_t *)pool->first_free;
 
-    // Find the first fit block
+    // Traverse the free list to find the first fit block
     while (current != NULL)
     {
         if (is_block_free(&(current->header)) && get_block_size(&(current->header)) >= size)
         {
-            break;
+            break; // Found a suitable block
         }
         current = current->next;
     }
+
+    // No suitable block found
     if (current == NULL)
     {
         printf("Error: No suitable block found in the standard pool\n");
         return NULL;
     }
 
-    // Split the block if too large
+    // If the block is larger than needed, split it
     size_t block_size = get_block_size(&(current->header));
-    if (block_size > size + sizeof(mem_std_block_header_footer_t) * 2)
+    size_t total_size = size + sizeof(mem_std_block_header_footer_t) * 2;
+    size_t remaining_size = block_size - size - sizeof(mem_std_block_header_footer_t) * 2;
+
+    if (remaining_size >= sizeof(mem_std_free_block_t) + sizeof(mem_std_block_header_footer_t))
     {
-        // Create a new free block from remaining space
-        mem_std_free_block_t *new_block = (mem_std_free_block_t *)((char *)current + sizeof(mem_std_block_header_footer_t) + size);
-        size_t remaining_size = block_size - size - sizeof(mem_std_block_header_footer_t) * 2;
+        // There is enough space for a new block, so split
+        mem_std_free_block_t *new_block = (mem_std_free_block_t *)((char *)current + total_size);
+
+        // Set the size and mark the new block as free
         set_block_size(&(new_block->header), remaining_size);
         set_block_free(&(new_block->header));
+
+        // Update the next and prev pointers for the new block
         new_block->next = current->next;
         new_block->prev = current;
-        set_block_size(&(current->header), size); // Update the current block size and footer
+        if (current->next != NULL)
+        {
+            current->next->prev = new_block;
+        }
         current->next = new_block;
-        mem_std_block_header_footer_t *new_footer = (mem_std_block_header_footer_t *)((char *)new_block + sizeof(mem_std_block_header_footer_t) + remaining_size); // footer for the new free block
+
+        // Set the footer for the new free block
+        mem_std_block_header_footer_t *new_footer = (mem_std_block_header_footer_t *)((char *)new_block + remaining_size);
         *new_footer = new_block->header;
+
+        // Adjust the current block size
+        set_block_size(&(current->header), size);
     }
 
-    set_block_used(&(current->header)); // Mark the block as used
+    // Mark the block as used
+    set_block_used(&(current->header));
     mem_std_block_header_footer_t *footer = (mem_std_block_header_footer_t *)((char *)current + sizeof(mem_std_block_header_footer_t) + get_block_size(&(current->header)));
     *footer = current->header;
-    return (void *)((char *)current + sizeof(mem_std_block_header_footer_t)); // Return the memory address after the header
+
+    // Return the memory address after the header
+    return (void *)((char *)current + sizeof(mem_std_block_header_footer_t));
 }
 
 void mem_free_standard_pool(mem_pool_t *pool, void *addr)
 {
-    mem_std_free_block_t *block = (mem_std_free_block_t *)((char *)addr - sizeof(mem_std_block_header_footer_t)); // Get header of the free block
-    set_block_free(&(block->header));                                                                             // Mark the block as free
+    // Get the header of the block being freed by subtracting the size of the header
+    mem_std_free_block_t *block = (mem_std_free_block_t *)((char *)addr - sizeof(mem_std_block_header_footer_t));
+
+    // Mark the block as free
+    set_block_free(&(block->header));
+
+    // Get the block footer
     mem_std_block_header_footer_t *footer = (mem_std_block_header_footer_t *)((char *)block + sizeof(mem_std_block_header_footer_t) + get_block_size(&(block->header)));
     *footer = block->header; // Update the footer to match the header
 
-    // Next block
+    // Coalesce with the next block if it's free
     mem_std_free_block_t *next_block = (mem_std_free_block_t *)((char *)footer + sizeof(mem_std_block_header_footer_t));
     if ((char *)next_block < (char *)pool->end_addr && is_block_free(&(next_block->header)))
     {
-        size_t new_size = get_block_size(&(block->header)) + sizeof(mem_std_block_header_footer_t) * 2 + get_block_size(&(next_block->header)); // Merge this block with the next free block
+        // Merge current block with the next free block
+        size_t new_size = get_block_size(&(block->header)) + sizeof(mem_std_block_header_footer_t) * 2 + get_block_size(&(next_block->header));
         set_block_size(&(block->header), new_size);
         set_block_free(&(block->header));
-        footer = (mem_std_block_header_footer_t *)((char *)block + sizeof(mem_std_block_header_footer_t) + get_block_size(&(block->header))); // Update footer for new size
+
+        // Update footer to match the new size
+        footer = (mem_std_block_header_footer_t *)((char *)block + sizeof(mem_std_block_header_footer_t) + get_block_size(&(block->header)));
         *footer = block->header;
 
         // Remove next block from the free list
@@ -117,26 +146,33 @@ void mem_free_standard_pool(mem_pool_t *pool, void *addr)
         block->next = next_block->next;
     }
 
-    // Previous block
+    // Coalesce with the previous block if it's free
     mem_std_block_header_footer_t *prev_footer = (mem_std_block_header_footer_t *)((char *)block - sizeof(mem_std_block_header_footer_t));
     if ((char *)prev_footer > (char *)pool->start_addr && is_block_free(prev_footer))
     {
+        // Get the previous block header
         mem_std_free_block_t *prev_block = (mem_std_free_block_t *)((char *)prev_footer - get_block_size(prev_footer) - sizeof(mem_std_block_header_footer_t));
+
+        // Merge the previous block with the current block
         size_t new_size = get_block_size(&(prev_block->header)) + sizeof(mem_std_block_header_footer_t) * 2 + get_block_size(&(block->header));
         set_block_size(&(prev_block->header), new_size);
         set_block_free(&(prev_block->header));
+
+        // Update footer of the merged block
         footer = (mem_std_block_header_footer_t *)((char *)prev_block + sizeof(mem_std_block_header_footer_t) + get_block_size(&(prev_block->header)));
         *footer = prev_block->header;
+
+        // Remove current block from the free list
         if (block->next)
         {
             block->next->prev = prev_block;
         }
         prev_block->next = block->next;
 
-        block = prev_block;
+        block = prev_block; // Continue coalescing from the previous block
     }
 
-    // Inserting block in the free list
+    // Insert the freed (or coalesced) block back into the free list
     mem_std_free_block_t *current = (mem_std_free_block_t *)pool->first_free;
     mem_std_free_block_t *prev = NULL;
 
@@ -145,6 +181,7 @@ void mem_free_standard_pool(mem_pool_t *pool, void *addr)
         prev = current;
         current = current->next;
     }
+
     block->next = current;
     block->prev = prev;
     if (current != NULL)
@@ -157,7 +194,7 @@ void mem_free_standard_pool(mem_pool_t *pool, void *addr)
     }
     else
     {
-        pool->first_free = block; // new head of the free list
+        pool->first_free = block; // This is the new head of the free list
     }
 }
 
