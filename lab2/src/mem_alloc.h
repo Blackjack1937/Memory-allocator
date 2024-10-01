@@ -19,9 +19,6 @@ size_t memory_get_allocated_block_size(void *addr);
 /* Display function */
 void print_mem_state(void); 
 
-/*subfuction of print mem_state*/
-void print_fast_pool(char mem[]);
-
 /* Function called upon process termination */
 void run_at_exit(void);
 
