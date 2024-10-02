@@ -53,6 +53,7 @@ char *heap_base(void)
 
 void print_mem_state(void)
 {
+    
 }
 
 void print_alloc_error(int size)
