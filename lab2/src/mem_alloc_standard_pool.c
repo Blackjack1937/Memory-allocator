@@ -54,17 +54,63 @@ void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, siz
 
 void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size)
 {
-    mem_std_free_block_t *current = (mem_std_free_block_t *)pool->first_free;
+     
+    static mem_std_free_block_t *current = (mem_std_free_block_t *)pool->first_free;
+    
+    //booleans to evaluate if the blocks can acomodate the alocation
+    char is_free = is_block_free(&(current->header));
+    char is_sufficently_big = get_block_size(&(current->header)) >= size;      
 
-    // Traverse the free list to find the first fit block
-    while (current != NULL)
-    {
-        if (is_block_free(&(current->header)) && get_block_size(&(current->header)) >= size)
-        {
-            break; // Found a suitable block
+    /*
+    this switch is used to defin which is the best block according
+    to the chosen placement policie and assign it to current
+    */
+    switch (std_pool_policy){
+    case FIRST_FIT:
+        // Traverse the free list from the beggining to find the first fit block
+        current = (mem_std_free_block_t *)pool->first_free;
+        while (current != NULL){
+            if (is_free && is_sufficently_big){
+                break; // Found a suitable block
+            }
+            current = current->next;
         }
-        current = current->next;
+        break;
+
+    case BEST_FIT:
+
+        // Traverse the free list to find the block whose size is closest to the allocated size
+        current = (mem_std_free_block_t *)pool->first_free;
+        mem_std_free_block_t *best=current;
+        while (current != NULL){
+            //evaluating if the current block is closer to the desired size than the precedent best (considering that it is already big enough)
+            char is_best_fit = get_block_size(&(current->header)) < get_block_size(&(best->header));
+            if (is_free && is_sufficently_big && is_best_fit){
+                best = current;
+            }
+            current = current->next;  
+        }
+        current = best;
+        break;
+
+    case NEXT_FIT:
+
+
+        while (current != NULL){
+            if if (is_free && is_sufficently_big){
+                break; // Found a suitable block
+            }
+            current = current->next;
+            if(current == NULL){
+                current = (mem_std_free_block_t *)pool->first_free;
+            }
+        }
+        break;
+    
+    default:
+        break;
     }
+   
 
     // No suitable block found
     if (current == NULL)
