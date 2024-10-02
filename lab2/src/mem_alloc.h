@@ -19,6 +19,9 @@ size_t memory_get_allocated_block_size(void *addr);
 /* Display function */
 void print_mem_state(void); 
 
+/* writes n in str at idx and return the new idx*/
+int write_int(size_t n, char str[], int idx);
+
 /* Function called upon process termination */
 void run_at_exit(void);
 

@@ -259,9 +259,49 @@ void print_mem_state(void){
             printf("%c",memstate[i]);
         }
         printf("]\n");
-    }  
+    } 
+    /*
+    9 is the maximum length to reprent a allocated block and the next free one in case of maximum usage
+    #1057#.1.
+    */
+    char memstate[9*mem_pools[3].pool_size/mem_pools[3].min_req_size];
+    int idx=0;
+    mem_std_free_block_t *current= (mem_std_free_block_t *) mem_pools[3].start_addr;
+    while ((char*)current < (char*)mem_pools[3].end_addr){
+        if (is_block_free(&(current->header))){
+        memstate[idx++]='.';
+        idx=write_int(get_block_size(&(current->header)),memstate,idx);
+        memstate[idx++]='.';
+        }else{
+        memstate[idx++]='#';
+        idx=write_int(get_block_size(&(current->header)),memstate,idx);
+        memstate[idx++]='#';
+        }
+        //we go to the next block wether the current one is free or allocated
+        current = (mem_std_free_block_t *)((char*)current+(get_block_size(&(current->header))+sizeof(mem_std_block_header_footer_t) * 2));
+    }
+    //print the representation
+    printf("\ncontent of standart pool \n[");
+    for(int i=0; i<idx;i++){
+        printf("%c",memstate[i]);
+    }
+    printf("]\n");        
+}
 
-    //TODO implement printing standard pool 
+
+int write_int(size_t n, char str[], int idx){
+    if(n<=0){
+        str[idx++]='0';
+    }else{
+        int i=1;
+        for (;i<n;i*=10);
+        i/=10;
+        for (; i>0; i/=10){    
+            str[idx++]=(char)'0'+(n/i);
+            n%=i;
+        }
+    }
+    return idx;
 }
 
 void print_free_info(void *addr)
