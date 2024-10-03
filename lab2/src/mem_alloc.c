@@ -295,8 +295,8 @@ void print_mem_state(void){
 
 
 int write_int(size_t n, char str[], int idx){
-    if(n<=0){
-        str[idx++]='0';
+    if(n<10){
+        str[idx++]='0'+n;
     }else{
         int i=1;
         //computing the order of magnitude of n
