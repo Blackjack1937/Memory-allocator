@@ -286,7 +286,7 @@ void print_mem_state(void){
         current = (mem_std_free_block_t *)((char*)current+(get_block_size(&(current->header))+sizeof(mem_std_block_header_footer_t) * 2));
     }
     //print the representation
-    printf("\ncontent of standart pool \n[");
+    printf("\ncontent of standard pool \n[");
     for(int i=0; i<idx;i++){
         printf("%c",memstate[i]);
     }

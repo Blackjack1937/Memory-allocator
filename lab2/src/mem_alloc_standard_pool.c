@@ -232,6 +232,7 @@ void mem_free_standard_pool(mem_pool_t *pool, void *addr)
     mem_std_free_block_t *current = (mem_std_free_block_t *)pool->first_free;
     mem_std_free_block_t *prev = NULL;
 
+    //Go to through the free list to find the position where block should be
     while (current != NULL && (char *)current < (char *)block)
     {
         prev = current;
@@ -242,6 +243,12 @@ void mem_free_standard_pool(mem_pool_t *pool, void *addr)
     block->prev = prev;
     if (current != NULL)
     {
+        assert(0);
+        /* TODO
+        why ? could lead to a block prev being himself if it's in the bggining of the list
+        ex: curent == block
+        maybe replace block by prev
+        */
         current->prev = block;
     }
     if (prev != NULL)
