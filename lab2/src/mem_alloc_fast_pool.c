@@ -2,15 +2,8 @@
 #include <stdio.h>
 
 #include "mem_alloc_fast_pool.h"
-#include "my_mmap.h"
 #include "mem_alloc.h"
-
-#include <assert.h>
-#include <stdio.h>
-
-#include "mem_alloc_fast_pool.h"
 #include "my_mmap.h"
-#include "mem_alloc.h"
 
 void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t max_request_size)
 {
@@ -33,8 +26,6 @@ void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t 
         return;
     }
 
-    // Calculate the number of blocks in the pool
-    nb_blocks = size / block_size;
 
     // Allocate memory for the pool using my_mmap
     void *address = my_mmap(size);
@@ -43,6 +34,16 @@ void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t 
         perror("Memory allocation failed");
         return;
     }
+
+    /* 
+    as the blocks for each fast pool has a size thats is a multiple of 2, 4, 8, 16, 32, 64
+    and that the blocks are back to back, and that there is no header that could cause it to go of allignment
+    we only need to offest the startign adress in a way that makes it a multiple of the desired alignement
+    */
+    long int alignment_offset = (long int)address%(long int)MEM_ALIGN;
+    address = (void*)((char*)address+alignment_offset);
+    // Calculate the number of blocks in the pool
+    nb_blocks = (size-alignment_offset) / block_size;
 
     // Initialize the pool
     p->start_addr = address;                        // Start of the memory region

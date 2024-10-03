@@ -18,6 +18,8 @@ std_pool_placement_policy_t std_pool_policy = DEFAULT_STDPOOL_POLICY;
 
 /////////////////////////////////////////////////////////////////////////////
 
+mem_std_free_block_t *current = NULL;
+
 void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t max_request_size)
 {
     void *address = my_mmap(size);
@@ -35,8 +37,15 @@ void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, siz
     p->max_req_size = max_request_size;
     p->first_free = address;
 
-    // First free block
+    //First free block    
     mem_std_free_block_t *first_block = (mem_std_free_block_t *)address;
+
+    /*
+    Variable used in mem_alloc_standard_pool() as a reference to the last looked at free block
+    It is initialized there so that it can be accessed staticly by the fuction
+    Be careful may be prone to bugs
+    */
+    current = first_block;
 
     // Set the block size and mark it as free
     set_block_size(&(first_block->header), size - sizeof(mem_std_block_header_footer_t) * 2); // Remove header and footer
@@ -52,14 +61,10 @@ void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, siz
     printf("Standard pool initialized with a block of size %zu bytes\n", get_block_size(&(first_block->header)));
 }
 
-void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size)
-{
-     
-    static mem_std_free_block_t *current = (mem_std_free_block_t *)pool->first_free;
+void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size){
     
     //booleans to evaluate if the blocks can acomodate the alocation
-    char is_free = is_block_free(&(current->header));
-    char is_sufficently_big = get_block_size(&(current->header)) >= size;      
+         
 
     /*
     this switch is used to defin which is the best block according
@@ -70,6 +75,8 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size)
         // Traverse the free list from the beggining to find the first fit block
         current = (mem_std_free_block_t *)pool->first_free;
         while (current != NULL){
+            char is_free = is_block_free(&(current->header));
+            char is_sufficently_big = get_block_size(&(current->header)) >= size; 
             if (is_free && is_sufficently_big){
                 break; // Found a suitable block
             }
@@ -83,6 +90,8 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size)
         current = (mem_std_free_block_t *)pool->first_free;
         mem_std_free_block_t *best=current;
         while (current != NULL){
+            char is_free = is_block_free(&(current->header));
+            char is_sufficently_big = get_block_size(&(current->header)) >= size; 
             //evaluating if the current block is closer to the desired size than the precedent best (considering that it is already big enough)
             char is_best_fit = get_block_size(&(current->header)) < get_block_size(&(best->header));
             if (is_free && is_sufficently_big && is_best_fit){
@@ -95,9 +104,10 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size)
 
     case NEXT_FIT:
 
-
         while (current != NULL){
-            if if (is_free && is_sufficently_big){
+            char is_free = is_block_free(&(current->header));
+            char is_sufficently_big = get_block_size(&(current->header)) >= size; 
+            if (is_free && is_sufficently_big){
                 break; // Found a suitable block
             }
             current = current->next;
