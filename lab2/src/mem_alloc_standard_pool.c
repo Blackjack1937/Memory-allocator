@@ -60,7 +60,7 @@ void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, siz
     printf("Standard pool initialized with a block of size %zu bytes\n", get_block_size(&(first_block->header)));
 }
 
-void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size){
+void *mem_alloc_standard_pool(mem_pool_t *pool, size_t requested_size){
     
     //this switch is used to defin which is the best block according to the chosen placement policie and assign it to current 
     switch (std_pool_policy){
@@ -69,7 +69,7 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size){
         current = (mem_std_free_block_t *)pool->first_free;
         while (current != NULL){
             char is_free = is_block_free(&(current->header));
-            char is_sufficently_big = get_block_size(&(current->header)) >= size; 
+            char is_sufficently_big = get_block_size(&(current->header)) >= requested_size; 
             if (is_free && is_sufficently_big){
                 break; // Found a suitable block
             }
@@ -84,7 +84,7 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size){
         mem_std_free_block_t *best=current;
         while (current != NULL){
             char is_free = is_block_free(&(current->header));
-            char is_sufficently_big = get_block_size(&(current->header)) >= size; 
+            char is_sufficently_big = get_block_size(&(current->header)) >= requested_size; 
             //evaluating if the current block is closer to the desired size than the precedent best (considering that it is already big enough)
             char is_best_fit = get_block_size(&(current->header)) < get_block_size(&(best->header));
             if (is_free && is_sufficently_big && is_best_fit){
@@ -99,7 +99,7 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size){
 
         while (current != NULL){
             char is_free = is_block_free(&(current->header));
-            char is_sufficently_big = get_block_size(&(current->header)) >= size; 
+            char is_sufficently_big = get_block_size(&(current->header)) >= requested_size; 
             if (is_free && is_sufficently_big){
                 break; // Found a suitable block
             }
@@ -121,33 +121,34 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t size){
         return NULL;
     }
 
-    // If the block is larger than needed, split it
-    size_t block_size = get_block_size(&(current->header)) + sizeof(mem_std_block_header_footer_t) * 2;
-    size_t total_size = size + sizeof(mem_std_block_header_footer_t) * 2;
-    size_t remaining_size = block_size - total_size;
-    if (remaining_size >= sizeof(mem_std_free_block_t) + sizeof(mem_std_block_header_footer_t))
+    //the total size we need to alocate a block of size requested_size
+    size_t total_allocated_size = requested_size + sizeof(mem_std_block_header_footer_t) * 2;
+    //the size that the new block would have in case of split (without header and footers)
+    size_t remaining_size = get_block_size(&(current->header)) - total_allocated_size;
+    // If the remaining size allows for a new free block then we split
+    if (remaining_size + sizeof(mem_std_block_header_footer_t) * 2 > sizeof(mem_std_free_block_t) + sizeof(mem_std_block_header_footer_t))
     {
         // There is enough space for a new block, so split
-        mem_std_free_block_t *new_block = (mem_std_free_block_t *)((char *)current + total_size);
+        mem_std_free_block_t *new_free_block = (mem_std_free_block_t *)((char *)current + total_allocated_size);
 
         // Set the size and mark the new block as free
-        set_block_size(&(new_block->header), remaining_size);
-        set_block_free(&(new_block->header));
+        set_block_size(&(new_free_block->header), remaining_size);
+        set_block_free(&(new_free_block->header));
 
         // Update the next and prev pointers for the new block
-        new_block->next = current->next;
-        new_block->prev = current;
+        new_free_block->next = current->next;
+        new_free_block->prev = current;
         if (current->next != NULL){
-            current->next->prev = new_block;
+            current->next->prev = new_free_block;
         }
-        current->next = new_block;
+        current->next = new_free_block;
 
         // Set the footer for the new free block
-        mem_std_block_header_footer_t *new_footer = (mem_std_block_header_footer_t *)((char *)new_block + remaining_size);
-        *new_footer = new_block->header;
+        mem_std_block_header_footer_t *new_footer = (mem_std_block_header_footer_t *)((char *)new_free_block + remaining_size);
+        *new_footer = new_free_block->header;
 
         // Adjust the current block size
-        set_block_size(&(current->header), size);
+        set_block_size(&(current->header), requested_size);
     }
 
     //removing the allocated block from the free list
