@@ -234,36 +234,82 @@ size_t memory_get_allocated_block_size(void *addr)
     return res;
 }
 
-void print_mem_state(void)
-{
-    printf("memory state of Pool 0 (<=64 bytes)\n ");
-    char mem0[MEM_POOL_0_SIZE];
-    print_fast_pool(mem0);
-    printf("memory state of Pool 1 (<=256 bytes)\n");
-    char mem1[MEM_POOL_1_SIZE];
-    print_fast_pool(mem1);
-    printf("memory state of Pool 2 (<=1024 bytes)\n");
-    char mem2[MEM_POOL_2_SIZE];
-    print_fast_pool(mem2);
-    printf("memory state of Pool 3 (>1024bytes\n");
-
+void print_mem_state(void){
+    //for each fast pool
+    for(int poolid=0; poolid<3;poolid++){
+        printf("content of %s [",mem_pools[poolid].pool_name);
+        //initialize a char array to visualize the content of the pool
+        int memstatesize=mem_pools[poolid].pool_size/mem_pools[poolid].max_req_size;
+        char memstate[memstatesize];
+        //this pointer purpose is to read the pointers to the next block within the free blocks
+        long int *pointer_to_the_next_mem_block=mem_pools[poolid].first_free;
+        //fill the array as if each bock was allocated
+        for(int i=0; i<memstatesize; i++ ){ memstate[i]='#';}
+        //while the are free blocks
+        while(pointer_to_the_next_mem_block!=NULL){
+            //convert the adress read from pointer_to_the_next_mem_block into a index for mem
+            long int real_place_in_the_virtual_memory = (pointer_to_the_next_mem_block-(long int*)mem_pools[poolid].first_free)/(mem_pools[poolid].max_req_size/sizeof(long int)) ;
+            //mark the block as free in the representation
+            memstate[real_place_in_the_virtual_memory]='.';
+            //go to the next memory block (the adress contained in the current memory block)
+            pointer_to_the_next_mem_block=(long int*)*(long int*)pointer_to_the_next_mem_block;
+        }
+        //print the representation
+        for(int i=0; i<memstatesize;i++){
+            printf("%c",memstate[i]);
+        }
+        printf("]\n");
+    } 
+    /*
+    9 is the maximum length to reprent a allocated block and the next free one in case of maximum usage
+    #1057#.1.
+    */
+    // string to store the display of the memory state
+    char memstate[9*mem_pools[3].pool_size/mem_pools[3].min_req_size];
+    int idx=0;
+    //pointer to the current block free and allocated
+    mem_std_free_block_t *current= (mem_std_free_block_t *) mem_pools[3].start_addr;
+    //while we didn't reach the end of the heap
+    while ((char*)current < (char*)mem_pools[3].end_addr){
+        if (is_block_free(&(current->header))){
+        // we display free memory blocks as ".size_of_the_free_block."
+        memstate[idx++]='.';
+        idx=write_int(get_block_size(&(current->header)),memstate,idx);
+        memstate[idx++]='.';
+        }else{
+        // we display allocated memory blocks as "#size_of_the_allocated_block#"
+        memstate[idx++]='#';
+        idx=write_int(get_block_size(&(current->header)),memstate,idx);
+        memstate[idx++]='#';
+        }
+        //we go to the next block wether the current one is free or allocated
+        current = (mem_std_free_block_t *)((char*)current+(get_block_size(&(current->header))+sizeof(mem_std_block_header_footer_t) * 2));
+    }
+    //print the representation
+    printf("\ncontent of standard pool \n[");
+    for(int i=0; i<idx;i++){
+        printf("%c",memstate[i]);
+    }
+    printf("]\n");        
 }
 
-void print_fast_pool(char mem[]){
-    printf("[");
-    char *pointer_to_the_next_mem_block;
-    for(int i=0; i<sizeof(mem); i++ ){
-            mem[i]='.';
+
+int write_int(size_t n, char str[], int idx){
+    if(n<10){
+        str[idx++]='0'+n;
+    }else{
+        int i=1;
+        //computing the order of magnitude of n
+        for (;i<n;i*=10);
+        i/=10;
+
+        //writing each digit of n in str
+        for (; i>0; i/=10){    
+            str[idx++]=(char)'0'+(n/i);
+            n%=i;
+        }
     }
-    while(pointer_to_the_next_mem_block!=NULL){
-        long int i = pointer_to_the_next_mem_block-mem ;
-        mem[i]='#';
-        pointer_to_the_next_mem_block=*pointer_to_the_next_mem_block;
-    }
-    for(int i =0; i<sizeof(mem);i++){
-        printf("%c",mem[i]);
-    }
-    printf("]\n");
+    return idx;
 }
 
 void print_free_info(void *addr)

@@ -55,5 +55,14 @@
   "C_Cpp_Runner.useLeakSanitizer": false,
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
-  "C_Cpp_Runner.msvcSecureNoWarnings": false
+  "C_Cpp_Runner.msvcSecureNoWarnings": false,
+  "C_Cpp.errorSquiggles": "disabled",
+  "files.associations": {
+    "*.cpp": "cpp",
+    "*.c": "c",
+    "mem_alloc_fast_pool.h": "c",
+    "mem_alloc.h": "c",
+    "my_mmap.h": "c",
+    "mem_alloc_standard_pool.h": "c"
+  }
 }

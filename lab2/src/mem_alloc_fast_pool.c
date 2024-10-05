@@ -2,15 +2,8 @@
 #include <stdio.h>
 
 #include "mem_alloc_fast_pool.h"
-#include "my_mmap.h"
 #include "mem_alloc.h"
-
-#include <assert.h>
-#include <stdio.h>
-
-#include "mem_alloc_fast_pool.h"
 #include "my_mmap.h"
-#include "mem_alloc.h"
 
 void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t max_request_size)
 {
@@ -36,6 +29,7 @@ void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t 
     // Calculate the number of blocks in the pool
     nb_blocks = size / block_size;
 
+
     // Allocate memory for the pool using my_mmap
     void *address = my_mmap(size);
     if (address == NULL)
@@ -43,6 +37,8 @@ void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t 
         perror("Memory allocation failed");
         return;
     }
+
+   
 
     // Initialize the pool
     p->start_addr = address;                        // Start of the memory region
