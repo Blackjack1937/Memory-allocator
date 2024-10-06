@@ -2,15 +2,8 @@
 #include <stdio.h>
 
 #include "mem_alloc_fast_pool.h"
-#include "my_mmap.h"
 #include "mem_alloc.h"
-
-#include <assert.h>
-#include <stdio.h>
-
-#include "mem_alloc_fast_pool.h"
 #include "my_mmap.h"
-#include "mem_alloc.h"
 
 void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t max_request_size)
 {
@@ -77,7 +70,6 @@ void *mem_alloc_fast_pool(mem_pool_t *pool, size_t size)
         printf("Error: Requested size out of bounds for this pool\n");
         return NULL;
     }
-
     // Check if the free list is empty
     if (pool->first_free == NULL)
     {

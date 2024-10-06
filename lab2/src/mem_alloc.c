@@ -286,7 +286,7 @@ void print_mem_state(void){
         current = (mem_std_free_block_t *)((char*)current+(get_block_size(&(current->header))+sizeof(mem_std_block_header_footer_t) * 2));
     }
     //print the representation
-    printf("\ncontent of standart pool \n[");
+    printf("\ncontent of standard pool \n[");
     for(int i=0; i<idx;i++){
         printf("%c",memstate[i]);
     }
@@ -295,8 +295,8 @@ void print_mem_state(void){
 
 
 int write_int(size_t n, char str[], int idx){
-    if(n<=0){
-        str[idx++]='0';
+    if(n<10){
+        str[idx++]='0'+n;
     }else{
         int i=1;
         //computing the order of magnitude of n
