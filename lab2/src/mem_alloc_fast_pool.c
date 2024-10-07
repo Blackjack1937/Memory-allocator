@@ -4,6 +4,8 @@
 #include "mem_alloc_fast_pool.h"
 #include "mem_alloc.h"
 #include "my_mmap.h"
+#include "alignment.h"
+
 
 void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t max_request_size)
 {
@@ -36,6 +38,14 @@ void init_fast_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t 
         perror("Memory allocation failed");
         return;
     }
+
+    /*
+    handling offset to keep the pool aligned 
+    as the block are fixed size and all multiples of 2,4,8,16,32,64
+    this is the only alignment we need to do for fast pools
+    */
+    address=align_init_fast(address);
+
 
     // Initialize the pool
     p->start_addr = address;                        // Start of the memory region

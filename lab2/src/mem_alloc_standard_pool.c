@@ -19,6 +19,9 @@ std_pool_placement_policy_t std_pool_policy = DEFAULT_STDPOOL_POLICY;
 
 mem_std_free_block_t *current = NULL;
 
+
+
+
 void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, size_t max_request_size)
 {
     void *address = my_mmap(size);
@@ -27,6 +30,11 @@ void init_standard_pool(mem_pool_t *p, size_t size, size_t min_request_size, siz
         perror("Memory allocation failed for the standard pool");
         return;
     }
+
+    /*
+    handling offset to keep the pool aligned
+    */
+    address=align_init_standard(address);
 
     // Initialize the pool
     p->start_addr = address;
@@ -161,6 +169,11 @@ void *mem_alloc_standard_pool(mem_pool_t *pool, size_t requested_size)
         set_block_size(&(current->header), requested_size);
     }
 
+    /*
+    handling offset to keep the pool aligned
+    */
+    set_block_size(&(current->header),size_block_aligment(requested_size));
+    
     // removing the allocated block from the free list
     if (current->prev != NULL)
     {
